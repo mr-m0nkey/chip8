@@ -62,6 +62,7 @@ impl Cpu {
             0x2000 => self.op_call(),
             0x3000 => self.op_se(),
             0x4000 => self.op_sne(),
+            0x5000 => self.op_se_vx_vy(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -128,9 +129,23 @@ impl Cpu {
         self.pc += 2;
     }
 
+    // 5xy0 - SE Vx, Vy -- Skip next instruction if Vx = Vy
+    // Compare register Vx to register Vy, and if they are equal, increment
+    // the program counter by 2.
+    // For now we're gonna be lazy. 5xyz is considered equivalent to 5xy0 for all z.
+    fn op_se_vx_vy(&mut self) {
+        if self.v[self.get_x() as usize] == self.v[self.get_y() as usize] {
+            self.pc += 2;
+        }
+
+        self.pc += 2;
+    }
+
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
     fn get_kk(&self) -> u8 { (self.opcode & 0x00ff) as u8 }
     fn get_x(&self) -> u8 { ((self.opcode & 0x0f00) >> 8) as u8 }
+    fn get_y(&self) -> u8 { ((self.opcode & 0x00f0) >> 4) as u8 }
+    fn get_z(&self) -> u8 { (self.opcode & 0x000f) as u8 }
 
 
 }
@@ -264,6 +279,26 @@ mod tests {
         let mut cpu = Cpu::new();
         cpu.v[3] = 0x88;
         load_data(&mut cpu, vec![0x43, 0x88]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x200 + 2);
+    }
+
+    #[test]
+    fn test_se_vs_if_true() {
+        let mut cpu = Cpu::new();
+        cpu.v[3] = 0x88;
+        cpu.v[6] = 0x88;
+        load_data(&mut cpu, vec![0x53, 0x60]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x200 + 4);
+    }
+
+    #[test]
+    fn test_se_vs_if_false() {
+        let mut cpu = Cpu::new();
+        cpu.v[3] = 0x84;
+        cpu.v[6] = 0x88;
+        load_data(&mut cpu, vec![0x33, 0x60]);
         cpu.emulate_cycle();
         assert_eq!(cpu.pc, 0x200 + 2);
     }
