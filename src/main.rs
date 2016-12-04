@@ -47,10 +47,6 @@ impl Cpu {
         }
     }
 
-    fn set_opcode(&mut self, opcode: u16) {
-        self.opcode = opcode;
-    }
-
     fn fetch_opcode(&mut self) {
         self.opcode = (self.memory[self.pc] as u16) << 8 | (self.memory[self.pc + 1] as u16);
     }
