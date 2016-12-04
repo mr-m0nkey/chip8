@@ -83,7 +83,7 @@ impl Cpu {
     fn op_cls(&mut self) {
         self.display = [[0; 32]; 64];
 
-        self.pc += 2;
+        self.inc_pc();
     }
 
     // 00EE - RET -- Return from a subroutine.
@@ -92,7 +92,7 @@ impl Cpu {
     fn op_ret(&mut self) {
         self.sp -= 1;
         self.pc = self.stack[self.sp] as usize;
-        self.pc += 2;
+        self.inc_pc();
     }
 
     // 1nnn - JP addr -- Jump to location nnn
@@ -114,20 +114,20 @@ impl Cpu {
     // Compare register Vx to kk, and if equal, increment the program counter by 2.
     fn op_se(&mut self) {
         if self.v[self.get_x() as usize] == self.get_kk() {
-            self.pc += 2;
+            self.inc_pc();
         }
 
-        self.pc += 2;
+        self.inc_pc();
     }
 
     // 4xkk - SNE Vx, byte -- Skip next instruction if Vx != kk
     // Compare register Vx to kk, and if not equal, increment the program counter by 2.
     fn op_sne(&mut self) {
         if self.v[self.get_x() as usize] != self.get_kk() {
-            self.pc += 2;
+            self.inc_pc();
         }
 
-        self.pc += 2;
+        self.inc_pc();
     }
 
     // 5xy0 - SE Vx, Vy -- Skip next instruction if Vx = Vy
@@ -136,10 +136,10 @@ impl Cpu {
     // For now we're gonna be lazy. 5xyz is considered equivalent to 5xy0 for all z.
     fn op_se_vx_vy(&mut self) {
         if self.v[self.get_x() as usize] == self.v[self.get_y() as usize] {
-            self.pc += 2;
+            self.inc_pc();
         }
 
-        self.pc += 2;
+        self.inc_pc();
     }
 
     // 6xkk - LD Vx, byte -- Set Vx = kk
