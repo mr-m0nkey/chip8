@@ -51,6 +51,10 @@ impl Cpu {
         self.opcode = (self.memory[self.pc] as u16) << 8 | (self.memory[self.pc + 1] as u16);
     }
 
+    fn inc_pc(&mut self) {
+        self.pc += 2;
+    }
+
     fn opcode_execute(&mut self) {
         match self.opcode & 0xf000 {
             0x0000 => self.op_0xxx(),
@@ -59,6 +63,7 @@ impl Cpu {
             0x3000 => self.op_se(),
             0x4000 => self.op_sne(),
             0x5000 => self.op_se_vx_vy(),
+            0x6000 => self.op_ld_vx_byte(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -137,11 +142,18 @@ impl Cpu {
         self.pc += 2;
     }
 
+    // 6xkk - LD Vx, byte -- Set Vx = kk
+    // Puts the value kk into register Vx.
+    fn op_ld_vx_byte(&mut self) {
+        self.v[self.get_x() as usize] = self.get_kk();
+        self.inc_pc();
+    }
+
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
     fn get_kk(&self) -> u8 { (self.opcode & 0x00ff) as u8 }
     fn get_x(&self) -> u8 { ((self.opcode & 0x0f00) >> 8) as u8 }
     fn get_y(&self) -> u8 { ((self.opcode & 0x00f0) >> 4) as u8 }
-    fn get_z(&self) -> u8 { (self.opcode & 0x000f) as u8 }
+    fn get_n(&self) -> u8 { (self.opcode & 0x000f) as u8 }
 
 
 }
@@ -297,5 +309,13 @@ mod tests {
         load_data(&mut cpu, vec![0x33, 0x60]);
         cpu.emulate_cycle();
         assert_eq!(cpu.pc, 0x200 + 2);
+    }
+
+    #[test]
+    fn test_ld_vx_byte() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x63, 0x92]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[3], 0x92);
     }
 }
