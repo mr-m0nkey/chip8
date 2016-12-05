@@ -64,6 +64,7 @@ impl Cpu {
             0x4000 => self.op_sne(),
             0x5000 => self.op_se_vx_vy(),
             0x6000 => self.op_ld_vx_byte(),
+            0x7000 => self.op_add_vx_byte(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -149,12 +150,22 @@ impl Cpu {
         self.inc_pc();
     }
 
+    // 7xkk - ADD Vx, byte
+    // Adds the value kk to the value of register Vx, then stores result in Vx.
+    // In case of overflow, just add, and take the 8 rightmost bits.
+    fn op_add_vx_byte(&mut self) {
+        let x = self.get_x() as usize;
+        // So rust lets us add without overflowing, cast each number to u16.
+        // Then, as our register only accepts u8, cast back to u8.
+        // casting to u8 is defined to truncate for us.
+        self.v[x] = ((self.v[x] as u16) + (self.get_kk() as u16)) as u8;
+    }
+
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
     fn get_kk(&self) -> u8 { (self.opcode & 0x00ff) as u8 }
     fn get_x(&self) -> u8 { ((self.opcode & 0x0f00) >> 8) as u8 }
     fn get_y(&self) -> u8 { ((self.opcode & 0x00f0) >> 4) as u8 }
     fn get_n(&self) -> u8 { (self.opcode & 0x000f) as u8 }
-
 
 }
 
@@ -317,5 +328,23 @@ mod tests {
         load_data(&mut cpu, vec![0x63, 0x92]);
         cpu.emulate_cycle();
         assert_eq!(cpu.v[3], 0x92);
+    }
+
+    #[test]
+    fn test_add_vx_byte() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x73, 0x10]);
+        cpu.v[3] = 0x70;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[3], 0x10 + 0x70);
+    }
+
+    #[test]
+    fn test_add_vx_byte_overflow() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x73, 0x01]);
+        cpu.v[3] = 0xff;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[3], 0);
     }
 }
