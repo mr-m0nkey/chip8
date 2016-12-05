@@ -65,6 +65,7 @@ impl Cpu {
             0x5000 => self.op_se_vx_vy(),
             0x6000 => self.op_ld_vx_byte(),
             0x7000 => self.op_add_vx_byte(),
+            0x8000 => self.op_8xxx(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -77,6 +78,13 @@ impl Cpu {
             0x00E0 => self.op_cls(),
             0x00EE => self.op_ret(),
             _      => unimplemented!()
+        }
+    }
+
+    fn op_8xxx(&mut self) {
+        match self.opcode & 0x000f {
+            0 => self.op_ld_vx_vy(),
+            _ => unimplemented!()
         }
     }
 
@@ -159,6 +167,14 @@ impl Cpu {
         // Then, as our register only accepts u8, cast back to u8.
         // casting to u8 is defined to truncate for us.
         self.v[x] = ((self.v[x] as u16) + (self.get_kk() as u16)) as u8;
+    }
+
+    // 8xy0 - LD Vx, Vy -- Set Vx = Vy.
+    // Stores the value of register Vy in register Vx.
+    fn op_ld_vx_vy(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+        self.v[x] = self.v[y];
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -346,5 +362,14 @@ mod tests {
         cpu.v[3] = 0xff;
         cpu.emulate_cycle();
         assert_eq!(cpu.v[3], 0);
+    }
+
+    #[test]
+    fn test_ld_vx_vy() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x83, 0x70]);
+        cpu.v[7] = 0x82;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[3], 0x82);
     }
 }
