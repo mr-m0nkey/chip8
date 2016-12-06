@@ -89,6 +89,7 @@ impl Cpu {
             3 => self.op_xor(),
             4 => self.op_add_vx_vy(),
             5 => self.op_sub_vx_vy(),
+            6 => self.op_shr_vx_vy(),
             _ => unimplemented!()
         }
     }
@@ -232,7 +233,7 @@ impl Cpu {
         self.inc_pc();
     }
 
-    // 8xy5 -- SUB Vx, Vy -- Set Vx = Vx - Vy, set VF = not borrow
+    // 8xy5 - SUB Vx, Vy -- Set Vx = Vx - Vy, set VF = not borrow
     // If Vx > Vy, VF is set to 1, otherwise 0. Then Vy is subtracted from Vx
     // (using wrap-around arithmetic), and the result is stored in Vx.
     fn op_sub_vx_vy(&mut self) {
@@ -246,6 +247,17 @@ impl Cpu {
         }
 
         self.v[x] = self.v[x].wrapping_sub(self.v[y]);
+    }
+
+    // 8xy6 - SHR Vx, Vy -- Set Vx = Vy SHR 1
+    // Set VF to least significant bit of Vy, shift value of Vy right by one,
+    // and store the result to Vx.
+    fn op_shr_vx_vy(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+
+        self.v[0xf] = self.v[y] & 1;
+        self.v[x] = self.v[y] >> 1;
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -519,6 +531,42 @@ mod tests {
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0xA], 255);
         assert_eq!(cpu.v[0xF], 0);
+    }
+
+    #[test]
+    fn test_shr_shift_x() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x46]);
+        cpu.v[4] = 0b11;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[4], 1);
+    }
+
+    #[test]
+    fn test_shr_shift_y_to_x() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x56]);
+        cpu.v[5] = 0b10;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[4], 1);
+    }
+
+    #[test]
+    fn test_shr_carry_0() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x46]);
+        cpu.v[4] = 0b10;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xf], 0);
+    }
+
+    #[test]
+    fn test_shr_carry_1() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x46]);
+        cpu.v[4] = 0b11;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xf], 1);
     }
 
 }
