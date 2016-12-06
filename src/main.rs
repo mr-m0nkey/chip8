@@ -66,6 +66,7 @@ impl Cpu {
             0x6000 => self.op_ld_vx_byte(),
             0x7000 => self.op_add_vx_byte(),
             0x8000 => self.op_8xxx(),
+            0x9000 => self.op_sne_vx_vy(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -249,6 +250,7 @@ impl Cpu {
         }
 
         self.v[x] = self.v[x].wrapping_sub(self.v[y]);
+        self.inc_pc();
     }
 
     // 8xy6 - SHR Vx, Vy -- Set Vx = Vy SHR 1
@@ -260,6 +262,7 @@ impl Cpu {
 
         self.v[0xf] = self.v[y] & 1;
         self.v[x] = self.v[y] >> 1;
+        self.inc_pc();
     }
 
     // 8xy7 -- SUBN Vx, Vy -- Set Vx = Vy - Vx, set VF = NOT borrow.
@@ -276,6 +279,7 @@ impl Cpu {
         }
 
         self.v[x] = self.v[y].wrapping_sub(self.v[x]);
+        self.inc_pc();
     }
 
     // 8xyE - SHL Vx, Vy -- Set Vx = Vy SHL 1
@@ -287,6 +291,18 @@ impl Cpu {
 
         self.v[0xf] = self.v[y]>> 7;
         self.v[x] = self.v[y] << 1;
+        self.inc_pc();
+    }
+
+    //9xy0 - SNE Vx, Vy -- Skip next instruction if Vx != Vy
+    // Values of Vx and Vy are compared. If not equal, program counter
+    // is increased by two.
+    fn op_sne_vx_vy(&mut self) {
+        if self.v[self.get_x() as usize] != self.v[self.get_y() as usize] {
+            self.inc_pc();
+        }
+
+        self.inc_pc();
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -654,6 +670,26 @@ mod tests {
         cpu.v[4] = 0b11000000;
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0xf], 1);
+    }
+
+    #[test]
+    fn test_sne_vx_vy_if_equal() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x93, 0x40]);
+        cpu.v[3] = 0x88;
+        cpu.v[4] = 0x88;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x200 + 2);
+    }
+
+    #[test]
+    fn test_sne_vx_vy_if_not_equal() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x93, 0x40]);
+        cpu.v[3] = 0x88;
+        cpu.v[4] = 0x87;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x200 + 4);
     }
 
 }
