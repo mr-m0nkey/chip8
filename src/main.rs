@@ -83,14 +83,15 @@ impl Cpu {
 
     fn op_8xxx(&mut self) {
         match self.opcode & 0x000f {
-            0 => self.op_ld_vx_vy(),
-            1 => self.op_or(),
-            2 => self.op_and(),
-            3 => self.op_xor(),
-            4 => self.op_add_vx_vy(),
-            5 => self.op_sub_vx_vy(),
-            6 => self.op_shr_vx_vy(),
-            7 => self.op_subn_vx_vy(),
+            0   => self.op_ld_vx_vy(),
+            1   => self.op_or(),
+            2   => self.op_and(),
+            3   => self.op_xor(),
+            4   => self.op_add_vx_vy(),
+            5   => self.op_sub_vx_vy(),
+            6   => self.op_shr_vx_vy(),
+            7   => self.op_subn_vx_vy(),
+            0xE => self.op_shl_vx_vy(),
             _ => unimplemented!()
         }
     }
@@ -275,6 +276,17 @@ impl Cpu {
         }
 
         self.v[x] = self.v[y].wrapping_sub(self.v[x]);
+    }
+
+    // 8xy6 - SHL Vx, Vy -- Set Vx = Vy SHL 1
+    // Set VF to most significant bit of Vy, shift value of Vy left by one,
+    // and store the result to Vx.
+    fn op_shl_vx_vy(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+
+        self.v[0xf] = self.v[y]>> 7;
+        self.v[x] = self.v[y] << 1;
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -606,6 +618,42 @@ mod tests {
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0x4], 255);
         assert_eq!(cpu.v[0xF], 0);
+    }
+
+    #[test]
+    fn test_shl_shift_x() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x4E]);
+        cpu.v[4] = 0b01;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[4], 0b10);
+    }
+
+    #[test]
+    fn test_shl_shift_y_to_x() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x5E]);
+        cpu.v[5] = 0b10;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[4], 0b100);
+    }
+
+    #[test]
+    fn test_shl_carry_0() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x4E]);
+        cpu.v[4] = 0b1;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xf], 0);
+    }
+
+    #[test]
+    fn test_shl_carry_1() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x4E]);
+        cpu.v[4] = 0b11000000;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xf], 1);
     }
 
 }
