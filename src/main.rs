@@ -87,6 +87,7 @@ impl Cpu {
             1 => self.op_or(),
             2 => self.op_and(),
             3 => self.op_xor(),
+            4 => self.op_add_vx_vy(),
             _ => unimplemented!()
         }
     }
@@ -202,6 +203,26 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[x] ^ self.v[y];
+    }
+
+    // 8xy4 -- ADD Vx, Vy -- Set Vx = Vx + Vy, set VF = carry
+    // Values of Vx and Vy are added. If result is greater than 8 bits, then
+    // VF is set to 1, otherwise 0. The lowest 8 bits of result are kept and
+    // stored in Vx.
+    fn op_add_vx_vy(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+        // As the addition could overflow the u8 bit values of the register, we need
+        // to cast as u16s.
+        let sum = (self.v[x] as u16) + (self.v[y] as u16);
+
+        if sum > 0xFF { // 0xFF is maximum value of a u8
+            self.v[0xF] = 1;
+        } else {
+            self.v[0xF] = 0;
+        }
+
+        self.v[x] = sum as u8;
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -431,6 +452,28 @@ mod tests {
         //     XOR = 0b11011010;
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0xB], 0b11011010);
+    }
+
+    #[test]
+    fn test_add_vx_vy() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x8A, 0xB4]);
+        cpu.v[0xA] = 0x5;
+        cpu.v[0xB] = 0x3;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xA], 0x8);
+        assert_eq!(cpu.v[0xF], 0);
+    }
+
+    #[test]
+    fn test_add_vx_vy_overflow() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x8A, 0xB4]);
+        cpu.v[0xA] = 0xFF;
+        cpu.v[0xB] = 0x1;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xA], 0);
+        assert_eq!(cpu.v[0xF], 1);
     }
 
 }
