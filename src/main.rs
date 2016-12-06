@@ -278,7 +278,7 @@ impl Cpu {
         self.v[x] = self.v[y].wrapping_sub(self.v[x]);
     }
 
-    // 8xy6 - SHL Vx, Vy -- Set Vx = Vy SHL 1
+    // 8xyE - SHL Vx, Vy -- Set Vx = Vy SHL 1
     // Set VF to most significant bit of Vy, shift value of Vy left by one,
     // and store the result to Vx.
     fn op_shl_vx_vy(&mut self) {
