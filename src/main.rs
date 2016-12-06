@@ -171,6 +171,7 @@ impl Cpu {
         // Then, as our register only accepts u8, cast back to u8.
         // casting to u8 is defined to truncate for us.
         self.v[x] = ((self.v[x] as u16) + (self.get_kk() as u16)) as u8;
+        self.inc_pc();
     }
 
     // 8xy0 - LD Vx, Vy -- Set Vx = Vy.
@@ -179,6 +180,7 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[y];
+        self.inc_pc();
     }
 
     // 8xy1 - OR Vx, Vy -- Set Vx = Vx OR Vy
@@ -187,6 +189,7 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[x] | self.v[y];
+        self.inc_pc();
     }
 
     // 8xy2 - AND Vx, Vy -- Set Vx = Vx AND Vy
@@ -195,6 +198,7 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[x] & self.v[y];
+        self.inc_pc();
     }
 
     // 8xy3 - XOR Vx, Vy -- Set Vx = Vx XOR Vy
@@ -203,6 +207,7 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[x] ^ self.v[y];
+        self.inc_pc();
     }
 
     // 8xy4 -- ADD Vx, Vy -- Set Vx = Vx + Vy, set VF = carry
@@ -223,6 +228,7 @@ impl Cpu {
         }
 
         self.v[x] = sum as u8;
+        self.inc_pc();
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
