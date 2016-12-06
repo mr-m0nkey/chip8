@@ -90,6 +90,7 @@ impl Cpu {
             4 => self.op_add_vx_vy(),
             5 => self.op_sub_vx_vy(),
             6 => self.op_shr_vx_vy(),
+            7 => self.op_subn_vx_vy(),
             _ => unimplemented!()
         }
     }
@@ -258,6 +259,22 @@ impl Cpu {
 
         self.v[0xf] = self.v[y] & 1;
         self.v[x] = self.v[y] >> 1;
+    }
+
+    // 8xy7 -- SUBN Vx, Vy -- Set Vx = Vy - Vx, set VF = NOT borrow.
+    // If Vy > Vx, VF is set to 1, otherwise 0. Then Vx is subtracted from Vy
+    // (using wrap-around arithmetic), and the result is stored in Vx.
+    fn op_subn_vx_vy(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+
+        if self.v[y] > self.v[x] { 
+            self.v[0xf] = 1;
+        } else {
+            self.v[0xf] = 0;
+        }
+
+        self.v[x] = self.v[y].wrapping_sub(self.v[x]);
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -567,6 +584,28 @@ mod tests {
         cpu.v[4] = 0b11;
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0xf], 1);
+    }
+
+    #[test]
+    fn test_subn_vx_vy() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x57]);
+        cpu.v[0x4] = 1;
+        cpu.v[0x5] = 5;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0x4], 4);
+        assert_eq!(cpu.v[0xF], 1);
+    }
+
+    #[test]
+    fn test_subn_vx_vy_overflow() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x84, 0x57]);
+        cpu.v[0x4] = 1;
+        cpu.v[0x5] = 0;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0x4], 255);
+        assert_eq!(cpu.v[0xF], 0);
     }
 
 }
