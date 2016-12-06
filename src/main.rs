@@ -84,6 +84,9 @@ impl Cpu {
     fn op_8xxx(&mut self) {
         match self.opcode & 0x000f {
             0 => self.op_ld_vx_vy(),
+            1 => self.op_or(),
+            2 => self.op_and(),
+            3 => self.op_xor(),
             _ => unimplemented!()
         }
     }
@@ -175,6 +178,30 @@ impl Cpu {
         let x = self.get_x() as usize;
         let y = self.get_y() as usize;
         self.v[x] = self.v[y];
+    }
+
+    // 8xy1 - OR Vx, Vy -- Set Vx = Vx OR Vy
+    // Perform bitwise OR on values of Vx and Vy, store result in Vx.
+    fn op_or(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+        self.v[x] = self.v[x] | self.v[y];
+    }
+
+    // 8xy2 - AND Vx, Vy -- Set Vx = Vx AND Vy
+    // Perform bitwise AND on values of Vx and Vy, store result in Vx.
+    fn op_and(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+        self.v[x] = self.v[x] & self.v[y];
+    }
+
+    // 8xy3 - XOR Vx, Vy -- Set Vx = Vx XOR Vy
+    // Perform bitwise XOR on values of Vx and Vy, store result in Vx.
+    fn op_xor(&mut self) {
+        let x = self.get_x() as usize;
+        let y = self.get_y() as usize;
+        self.v[x] = self.v[x] ^ self.v[y];
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -372,4 +399,38 @@ mod tests {
         cpu.emulate_cycle();
         assert_eq!(cpu.v[3], 0x82);
     }
+
+    #[test]
+    fn test_or() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x80, 0xA1]);
+        cpu.v[0]   = 0b10110011;
+        cpu.v[0xA] = 0b01101001;
+        //      OR = 0b11111011
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0], 0b11111011);
+    }
+
+    #[test]
+    fn test_and() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x8B, 0xA2]);
+        cpu.v[0xB] = 0b10110011;
+        cpu.v[0xA] = 0b01101001;
+        //     AND = 0b00100001;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xB], 0b00100001);
+    }
+
+    #[test]
+    fn test_xor() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0x8B, 0xA3]);
+        cpu.v[0xB] = 0b10110011;
+        cpu.v[0xA] = 0b01101001;
+        //     XOR = 0b11011010;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xB], 0b11011010);
+    }
+
 }
