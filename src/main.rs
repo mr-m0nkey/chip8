@@ -67,6 +67,7 @@ impl Cpu {
             0x7000 => self.op_add_vx_byte(),
             0x8000 => self.op_8xxx(),
             0x9000 => self.op_sne_vx_vy(),
+            0xA000 => self.op_ld_i_addr(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -303,6 +304,12 @@ impl Cpu {
         }
 
         self.inc_pc();
+    }
+
+    //Annn - LD I, addr -- Set I = nnn.
+    // The value of register I is set to nnn.
+    fn op_ld_i_addr(&mut self) {
+        self.i = self.get_nnn();
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -690,6 +697,14 @@ mod tests {
         cpu.v[4] = 0x87;
         cpu.emulate_cycle();
         assert_eq!(cpu.pc, 0x200 + 4);
+    }
+
+    #[test]
+    fn test_ld_i_addr() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0xAA, 0xAA]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.i, 0xAAA);
     }
 
 }
