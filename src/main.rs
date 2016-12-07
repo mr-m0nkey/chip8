@@ -1,3 +1,5 @@
+extern crate rand;
+
 fn main() {
     println!("Hello, world!");
 }
@@ -69,6 +71,7 @@ impl Cpu {
             0x9000 => self.op_sne_vx_vy(),
             0xA000 => self.op_ld_i_addr(),
             0xB000 => self.op_jp_v0_addr(),
+            0xC000 => self.op_rnd_vx_byte(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -318,7 +321,12 @@ impl Cpu {
     // Bnnn - JP V0, addr -- Jump to location nnn + V0
     // Program counter set to nnn plus the value of V0.
     fn op_jp_v0_addr(&mut self) {
-        self.pc = (self.v[0] as usize + self.get_nnn() as usize);
+        self.pc = self.v[0] as usize + self.get_nnn() as usize;
+    }
+
+    fn op_rnd_vx_byte(&mut self) {
+        self.v[self.get_x() as usize] = rand::random::<u8>() & self.get_kk();
+        self.inc_pc();
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -723,6 +731,18 @@ mod tests {
         cpu.v[0] = 0x25;
         cpu.emulate_cycle();
         assert_eq!(cpu.pc, 0x386 + 0x25);
+    }
+
+    #[test]
+    fn test_rnd_vx_byte_masks_binary() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0xC3, 0x01]);
+        cpu.v[3] = 2;
+        cpu.emulate_cycle();
+        assert!(cpu.v[3] <= 1);
+        // cool, I originally had a & (cpu.v[3] >= 0)... 
+        // But since u8 can't go less than 0, all numbers are constrained to being
+        // greater than 0. Rust warned this to me on its own. Neat!
     }
 
 }
