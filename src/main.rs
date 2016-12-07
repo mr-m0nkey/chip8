@@ -68,6 +68,7 @@ impl Cpu {
             0x8000 => self.op_8xxx(),
             0x9000 => self.op_sne_vx_vy(),
             0xA000 => self.op_ld_i_addr(),
+            0xB000 => self.op_jp_v0_addr(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
                 unimplemented!()
@@ -310,6 +311,14 @@ impl Cpu {
     // The value of register I is set to nnn.
     fn op_ld_i_addr(&mut self) {
         self.i = self.get_nnn();
+
+        self.inc_pc();
+    }
+
+    // Bnnn - JP V0, addr -- Jump to location nnn + V0
+    // Program counter set to nnn plus the value of V0.
+    fn op_jp_v0_addr(&mut self) {
+        self.pc = (self.v[0] as usize + self.get_nnn() as usize);
     }
 
     fn get_nnn(&self) -> u16 { self.opcode & 0x0fff }
@@ -705,6 +714,15 @@ mod tests {
         load_data(&mut cpu, vec![0xAA, 0xAA]);
         cpu.emulate_cycle();
         assert_eq!(cpu.i, 0xAAA);
+    }
+
+    #[test]
+    fn test_op_jp_v0_addr() {
+        let mut cpu = Cpu::new();
+        load_data(&mut cpu, vec![0xB3, 0x86]);
+        cpu.v[0] = 0x25;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x386 + 0x25);
     }
 
 }
