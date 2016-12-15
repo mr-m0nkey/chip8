@@ -1,5 +1,7 @@
 extern crate rand;
 
+use std::time::{Duration, Instant};
+
 pub struct Cpu {
     opcode: u16,
     v: [u8; 16],
@@ -11,7 +13,8 @@ pub struct Cpu {
     stack: [u16; 16],
     memory: [u8; 4096],
     keypad: [bool; 16],
-    pub disp_buff: [[bool; 64]; 32]
+    pub disp_buff: [[bool; 64]; 32],
+    time_at_last_timer_count: Instant
 }
 
 impl Cpu {
@@ -28,7 +31,8 @@ impl Cpu {
             stack: [0; 16],
             memory: [0; 4096],
             keypad: [false; 16],
-            disp_buff: [[false; 64]; 32]
+            disp_buff: [[false; 64]; 32],
+            time_at_last_timer_count: Instant::now()
         };
 
         return cpu;
@@ -37,6 +41,19 @@ impl Cpu {
     pub fn emulate_cycle(&mut self) {
         self.fetch_opcode();
         self.opcode_execute();
+        self.count_timers();
+    }
+
+    fn count_timers(&mut self) {
+        if Instant::now() - self.time_at_last_timer_count >= Duration::from_millis(17) {
+            self.time_at_last_timer_count = Instant::now();
+            if self.sound_timer > 0 {
+                self.sound_timer = self.sound_timer - 1;
+            }
+            if self.delay_timer > 0 {
+                self.delay_timer = self.delay_timer - 1;
+            }
+        }
     }
 
     fn load_bytes(&mut self, data: Vec<u8>) {
@@ -1014,4 +1031,15 @@ mod tests {
     }
 
     // I should test the whole font set? But I'm confident it works at this point.
+
+    #[test]
+    fn test_timers() {
+        use std::thread;
+        let mut cpu = Cpu::new();
+        Cpu::load_data(&mut cpu, vec![0x61, 0x01, 0x61, 0x01]);
+        cpu.delay_timer = 120;
+        thread::sleep_ms(18);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.delay_timer, 119);
+    }
 }
