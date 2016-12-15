@@ -8,7 +8,7 @@ impl Display {
         return disp;
     }
 
-    pub fn render(&self) {
+    pub fn render_to_raw_terminal(&self) {
         for row in self.buff.iter() {
             for pix in row.iter() {
                 if *pix { print!("x"); } else { print!(" "); }

@@ -881,7 +881,7 @@ mod tests {
         use display::Display;
         let display = Display::new(cpu.disp_buff);
         println!("Display:");
-        display.render();
+        display.render_to_raw_terminal();
         for i in 0..32 {
             for ii in 0..64 {
                 assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
@@ -942,7 +942,7 @@ mod tests {
         use display::Display;
         let display = Display::new(cpu.disp_buff);
         println!("Display:");
-        display.render();
+        display.render_to_raw_terminal();
         println!("Display end");
         for i in 0..32 {
             for ii in 0..64 {
@@ -982,7 +982,7 @@ mod tests {
         use display::Display;
         let display = Display::new(cpu.disp_buff);
         println!("Display:");
-        display.render();
+        display.render_to_raw_terminal();
         for i in 0..32 {
             for ii in 0..64 {
                 assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
@@ -1022,7 +1022,7 @@ mod tests {
         use display::Display;
         let display = Display::new(cpu.disp_buff);
         println!("Display:");
-        display.render();
+        display.render_to_raw_terminal();
         for i in 0..32 {
             for ii in 0..64 {
                 assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
