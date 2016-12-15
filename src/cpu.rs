@@ -12,7 +12,7 @@ pub struct Cpu {
     sp: usize,
     stack: [u16; 16],
     memory: [u8; 4096],
-    keypad: [bool; 16],
+    pub key_buff: [bool; 16],
     pub disp_buff: [[bool; 64]; 32],
     time_at_last_timer_count: Instant
 }
@@ -30,7 +30,7 @@ impl Cpu {
             sp: 0,
             stack: [0; 16],
             memory: [0; 4096],
-            keypad: [false; 16],
+            key_buff: [false; 16],
             disp_buff: [[false; 64]; 32],
             time_at_last_timer_count: Instant::now()
         };
@@ -97,6 +97,7 @@ impl Cpu {
             0xB000 => self.op_jp_v0_addr(),
             0xC000 => self.op_rnd_vx_byte(),
             0xD000 => self.op_drw_vx_vy_n(),
+            0xE000 => self.op_exxx(),
             0xF000 => self.op_fxxx(),
             _      => {
                 println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
@@ -131,6 +132,14 @@ impl Cpu {
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
             0x29 => self.op_ld_f_vx(),
+            _    => unimplemented!()
+        }
+    }
+
+    fn op_exxx(&mut self) {
+        match self.opcode & 0x00FF {
+            0x9E => self.op_skp_vx(),
+            0xA1 => self.op_sknp_vx(),
             _    => unimplemented!()
         }
     }
@@ -415,6 +424,30 @@ impl Cpu {
         }
 
         if flipped { self.v[0xF] = 1} else { self.v[0xF] = 0 }
+        self.inc_pc();
+    }
+
+    // Ex9E - SKP Vx -- Skip next instruction if key with value of Vx is pressed.
+    // Checks the keyboard, and if the key corresponding to the value of
+    // Vx is currently in the down position, the PC is incremented by two
+    // (but since each instruction is manually incrementing pc, four)
+    fn op_skp_vx(&mut self) {
+        let key = self.v[self.get_x() as usize] as usize;
+        if self.key_buff[key] {
+            self.inc_pc();
+        }
+        self.inc_pc();
+    }
+
+    // ExA1 - SKNP Vx -- Skip next instruction if key with value of Vx is not pressed.
+    // Checks the keyboard, and if the key corresponding to the value of
+    // Vx is currently in the up position, the PC is incremented by two
+    // (but since each instruction is manually incrementing pc, four)
+    fn op_sknp_vx(&mut self) {
+        let key = self.v[self.get_x() as usize] as usize;
+        if !self.key_buff[key] {
+            self.inc_pc();
+        }
         self.inc_pc();
     }
 
@@ -1041,5 +1074,39 @@ mod tests {
         thread::sleep_ms(18);
         cpu.emulate_cycle();
         assert_eq!(cpu.delay_timer, 119);
+    }
+
+    #[test]
+    fn test_skp_vx_if_pressed() {
+        let mut cpu = Cpu::new();
+        Cpu::load_data(&mut cpu, vec![0xE0, 0x9E]);
+        cpu.key_buff[0] = true;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x204);
+    }
+    
+    #[test]
+    fn test_skp_vx_if_not_pressed() {
+        let mut cpu = Cpu::new();
+        Cpu::load_data(&mut cpu, vec![0xE0, 0x9E]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x202);
+    }
+
+    #[test]
+    fn test_sknp_vx_if_pressed() {
+        let mut cpu = Cpu::new();
+        Cpu::load_data(&mut cpu, vec![0xE0, 0xA1]);
+        cpu.key_buff[0] = true;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x202);
+    }
+    
+    #[test]
+    fn test_sknp_vx_if_not_pressed() {
+        let mut cpu = Cpu::new();
+        Cpu::load_data(&mut cpu, vec![0xE0, 0xA1]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x204);
     }
 }
