@@ -1,11 +1,13 @@
 pub struct Display {
-    buff: [[bool; 64]; 32]
+    buff: [[bool; 64]; 32],
 }
 
 impl Display {
-    pub fn new(display_buffer: [[bool; 64]; 32]) -> Display {
-        let disp = Display { buff: display_buffer };
-        return disp;
+
+    pub fn new(display_buffer: [[bool; 64]; 32], window: PistonWindow) -> Display {
+        Display { 
+            buff: display_buffer,
+        }
     }
 
     pub fn render_to_raw_terminal(&self) {
@@ -16,4 +18,5 @@ impl Display {
             print!("\n");
         }
     }
+
 }

@@ -1,7 +1,9 @@
 [package]
 name = "chip8"
 version = "0.1.0"
-authors = ["corey"]
+authors = ["Corey Taylor <taylorcoreyd@icloud.com>"]
 
 [dependencies]
 rand= "0.3"
+piston= "0.27.0"
+piston_window= "0.59.0"

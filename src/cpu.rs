@@ -65,7 +65,7 @@ impl Cpu {
     fn load_data(cpu: &mut Cpu, data_to_load: Vec<u8>) {
         let mut data = vec![0; 0x200];
         for i in 0..80 {
-            data[i] = font_sprites[i];
+            data[i] = FONT_SPRITES[i];
         }
         for byte in data_to_load {
             data.push(byte)
@@ -467,7 +467,7 @@ impl Cpu {
 
 }
 
-static font_sprites: [u8; 80] = [0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
+static FONT_SPRITES: [u8; 80] = [0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
                                  0x20, 0x60, 0x20, 0x20, 0x70,  // 1
                                  0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
                                  0xF0, 0x10, 0xF0, 0x10, 0xF0,  // 3
