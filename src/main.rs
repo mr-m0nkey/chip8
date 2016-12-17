@@ -5,6 +5,9 @@ extern crate piston;
 
 use piston::input::generic_event::GenericEvent;
 use piston_window::*;
+use std::env;
+use std::fs::File;
+use std::io::Read;
 use cpu::Cpu;
 
 struct Machine {
@@ -17,8 +20,15 @@ impl Machine {
         Machine { cpu : Cpu::new() }
     }
 
-    fn load_rom() {
-        
+    fn load_rom(&mut self) {
+        let args: Vec<String> = env::args().collect();
+        let ref rom = args[1];
+
+        let mut file = File::open(rom).unwrap();
+        let mut rom_data = Vec::new();
+        file.read_to_end(&mut rom_data).unwrap();
+
+        Cpu::load_data(&mut self.cpu, rom_data);
     }
 
     fn on_update(&mut self) {
@@ -53,6 +63,7 @@ impl Machine {
 fn main() {
 
     let mut machine = Machine::new();
+    machine.load_rom();
 
     let mut window: PistonWindow = WindowSettings::new(
         "chip8 emulator", [640, 320]

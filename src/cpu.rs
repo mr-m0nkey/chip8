@@ -1,6 +1,7 @@
 extern crate rand;
 
 use std::time::{Duration, Instant};
+use std::process;
 
 pub struct Cpu {
     opcode: u16,
@@ -62,7 +63,7 @@ impl Cpu {
         }
     }
 
-    fn load_data(cpu: &mut Cpu, data_to_load: Vec<u8>) {
+    pub fn load_data(cpu: &mut Cpu, data_to_load: Vec<u8>) {
         let mut data = vec![0; 0x200];
         for i in 0..80 {
             data[i] = FONT_SPRITES[i];
@@ -79,6 +80,12 @@ impl Cpu {
 
     fn inc_pc(&mut self) {
         self.pc += 2;
+    }
+
+    fn opcode_unimplemented(&self) {
+        println!("opcode {:X} is not implemented.", self.opcode);
+        println!("Emulator exiting.");
+        process::exit(0);
     }
 
     fn opcode_execute(&mut self) {
@@ -99,10 +106,7 @@ impl Cpu {
             0xD000 => self.op_drw_vx_vy_n(),
             0xE000 => self.op_exxx(),
             0xF000 => self.op_fxxx(),
-            _      => {
-                println!("opcode {}, masked {} not implemented.", self.opcode, self.opcode & 0xf000); 
-                unimplemented!()
-            }
+            _      => self.opcode_unimplemented()
         }
     }
 
@@ -110,7 +114,11 @@ impl Cpu {
         match self.opcode {
             0x00E0 => self.op_cls(),
             0x00EE => self.op_ret(),
-            _      => unimplemented!()
+            0x0000 => {
+                println!("Reached a 0000 instruction. Emulation terminated.");
+                process::exit(0);
+            }
+            _      => self.opcode_unimplemented()
         }
     }
 
@@ -125,14 +133,14 @@ impl Cpu {
             6   => self.op_shr_vx_vy(),
             7   => self.op_subn_vx_vy(),
             0xE => self.op_shl_vx_vy(),
-            _   => unimplemented!()
+            _   => self.opcode_unimplemented()
         }
     }
 
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
             0x29 => self.op_ld_f_vx(),
-            _    => unimplemented!()
+            _    => self.opcode_unimplemented()
         }
     }
 
@@ -140,7 +148,7 @@ impl Cpu {
         match self.opcode & 0x00FF {
             0x9E => self.op_skp_vx(),
             0xA1 => self.op_sknp_vx(),
-            _    => unimplemented!()
+            _    => self.opcode_unimplemented()
         }
     }
 
