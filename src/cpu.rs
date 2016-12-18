@@ -139,8 +139,9 @@ impl Cpu {
 
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
+            0x07 => self.op_ld_vx_dt(),
             0x15 => self.op_ld_dt_vx(),
-            0x16 => self.op_ld_st_vx(),
+            0x18 => self.op_ld_st_vx(),
             0x29 => self.op_ld_f_vx(),
             0x33 => self.op_ld_b_vx(),
             0x65 => self.op_ld_vx_i(),
@@ -463,6 +464,13 @@ impl Cpu {
         self.inc_pc();
     }
 
+    // Fx07 - LD Vx, DT -- Set Vx = delay timer value.
+    // Value of DT is placed into Vx.
+    fn op_ld_vx_dt(&mut self) {
+        self.v[self.get_x() as usize] = self.delay_timer;
+        self.inc_pc();
+    }
+
     // Fx15 - LD DT, Vx -- Set delay timer = Vx
     // DT is set equal to the value of Vx.
     fn op_ld_dt_vx(&mut self) {
@@ -470,7 +478,7 @@ impl Cpu {
         self.inc_pc();
     }
 
-    // Fx16 - LD ST, Vx -- Set sound timer = Vx
+    // Fx18 - LD ST, Vx -- Set sound timer = Vx
     // DT is set equal to the value of Vx.
     fn op_ld_st_vx(&mut self) {
         self.sound_timer = self.v[self.get_x() as usize];
