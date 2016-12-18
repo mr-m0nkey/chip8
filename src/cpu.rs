@@ -139,6 +139,8 @@ impl Cpu {
 
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
+            0x15 => self.op_ld_dt_vx(),
+            0x16 => self.op_ld_st_vx(),
             0x29 => self.op_ld_f_vx(),
             0x33 => self.op_ld_b_vx(),
             0x65 => self.op_ld_vx_i(),
@@ -458,6 +460,20 @@ impl Cpu {
         if !self.key_buff[key] {
             self.inc_pc();
         }
+        self.inc_pc();
+    }
+
+    // Fx15 - LD DT, Vx -- Set delay timer = Vx
+    // DT is set equal to the value of Vx.
+    fn op_ld_dt_vx(&mut self) {
+        self.delay_timer = self.v[self.get_x() as usize];
+        self.inc_pc();
+    }
+
+    // Fx16 - LD ST, Vx -- Set sound timer = Vx
+    // DT is set equal to the value of Vx.
+    fn op_ld_st_vx(&mut self) {
+        self.sound_timer = self.v[self.get_x() as usize];
         self.inc_pc();
     }
 
@@ -1178,5 +1194,14 @@ mod tests {
         assert_eq!(cpu.v[1], 1);
         assert_eq!(cpu.v[2], 2);
         assert_eq!(cpu.v[3], 3);
+    }
+
+    #[test]
+    fn test_ld_dt_vx() {
+        let mut cpu = Cpu::new();
+        cpu.v[3] = 0x20;
+        Cpu::load_data(&mut cpu, vec![0xF3, 0x15]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.delay_timer, 0x20);
     }
 }
