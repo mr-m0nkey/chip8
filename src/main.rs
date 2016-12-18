@@ -8,6 +8,7 @@ use piston_window::*;
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::process;
 use cpu::Cpu;
 
 struct Machine {
@@ -22,13 +23,33 @@ impl Machine {
 
     fn load_rom(&mut self) {
         let args: Vec<String> = env::args().collect();
-        let ref rom = args[1];
+        let ref rom;
+        if args.len() > 1 {
+            rom = &args[1];
+        } else {
+            println!("Please provide a path to a chip8 rom as a command line argument.");
+            process::exit(0);
+        }
 
-        let mut file = File::open(rom).unwrap();
+
+        let file = File::open(rom);
         let mut rom_data = Vec::new();
-        file.read_to_end(&mut rom_data).unwrap();
+        let read_result;
+        match file {
+            Ok(mut f) => { read_result = f.read_to_end(&mut rom_data) },
+            Err(e) => {
+                println!("Error reading file: {:?}", e);
+                process::exit(0);
+            }
+        }
 
-        Cpu::load_data(&mut self.cpu, rom_data);
+        match read_result {
+            Ok(_) => Cpu::load_data(&mut self.cpu, rom_data),
+            Err(e) => {
+                println!("Error reading rom: {:?}", e);
+                process::exit(0);
+            }
+        }
     }
 
     fn on_update(&mut self) {

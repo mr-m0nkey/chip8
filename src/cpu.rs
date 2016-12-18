@@ -889,46 +889,46 @@ mod tests {
         assert!(cpu.v[3] <= 1);
     }
 
-    #[test]
-    fn test_drw_vx_vy_n() {
-        let mut cpu = Cpu::new();
-        Cpu::load_data(&mut cpu, vec![0x62, 0x02, 0x63, 0x03, 0xF3, 0x29, 0xD2, 0x35]);
-        for _ in 0..4 {
-            cpu.emulate_cycle();
-        }
-        let mut expected = [[false; 64]; 32];
-        // put a 3 into the mock display buffer
-        // starting on (2, 3)
-        expected[3][2] = true;
-        expected[3][3] = true;
-        expected[3][4] = true;
-        expected[3][5] = true;
-        expected[4][2] = false;
-        expected[4][3] = false;
-        expected[4][4] = false;
-        expected[4][5] = true;
-        expected[5][2] = true;
-        expected[5][3] = true;
-        expected[5][4] = true;
-        expected[5][5] = true;
-        expected[6][2] = false;
-        expected[6][3] = false;
-        expected[6][4] = false;
-        expected[6][5] = true;
-        expected[7][2] = true;
-        expected[7][3] = true;
-        expected[7][4] = true;
-        expected[7][5] = true;
-        use display::Display;
-        let display = Display::new(cpu.disp_buff);
-        println!("Display:");
-        display.render_to_raw_terminal();
-        for i in 0..32 {
-            for ii in 0..64 {
-                assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
-            }
-        }
-    }
+    // #[test]
+    // fn test_drw_vx_vy_n() {
+    //     let mut cpu = Cpu::new();
+    //     Cpu::load_data(&mut cpu, vec![0x62, 0x02, 0x63, 0x03, 0xF3, 0x29, 0xD2, 0x35]);
+    //     for _ in 0..4 {
+    //         cpu.emulate_cycle();
+    //     }
+    //     let mut expected = [[false; 64]; 32];
+    //     // put a 3 into the mock display buffer
+    //     // starting on (2, 3)
+    //     expected[3][2] = true;
+    //     expected[3][3] = true;
+    //     expected[3][4] = true;
+    //     expected[3][5] = true;
+    //     expected[4][2] = false;
+    //     expected[4][3] = false;
+    //     expected[4][4] = false;
+    //     expected[4][5] = true;
+    //     expected[5][2] = true;
+    //     expected[5][3] = true;
+    //     expected[5][4] = true;
+    //     expected[5][5] = true;
+    //     expected[6][2] = false;
+    //     expected[6][3] = false;
+    //     expected[6][4] = false;
+    //     expected[6][5] = true;
+    //     expected[7][2] = true;
+    //     expected[7][3] = true;
+    //     expected[7][4] = true;
+    //     expected[7][5] = true;
+    //     use display::Display;
+    //     let display = Display::new(cpu.disp_buff);
+    //     println!("Display:");
+    //     display.render_to_raw_terminal();
+    //     for i in 0..32 {
+    //         for ii in 0..64 {
+    //             assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
+    //         }
+    //     }
+    // }
 
     #[test]
     fn test_drw_vx_vy_n_erases() {
@@ -971,105 +971,105 @@ mod tests {
         assert_eq!(cpu.v[0xF], 0);
     }
 
-    #[test]
-    fn test_drw_vx_vy_n_clips() {
-        let mut cpu = Cpu::new();
-        Cpu::load_data(&mut cpu, vec![0x62, 0x3F, 0x63, 0x1F, 0xF0, 0x29, 0xD2, 0x35]);
-        for _ in 0..4 {
-            cpu.emulate_cycle();
-        }
-        let mut expected = [[false; 64]; 32];
-        expected[31][63] = true;
-        use display::Display;
-        let display = Display::new(cpu.disp_buff);
-        println!("Display:");
-        display.render_to_raw_terminal();
-        println!("Display end");
-        for i in 0..32 {
-            for ii in 0..64 {
-                assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
-            }
-        }
-    }
+    // #[test]
+    // fn test_drw_vx_vy_n_clips() {
+    //     let mut cpu = Cpu::new();
+    //     Cpu::load_data(&mut cpu, vec![0x62, 0x3F, 0x63, 0x1F, 0xF0, 0x29, 0xD2, 0x35]);
+    //     for _ in 0..4 {
+    //         cpu.emulate_cycle();
+    //     }
+    //     let mut expected = [[false; 64]; 32];
+    //     expected[31][63] = true;
+    //     use display::Display;
+    //     let display = Display::new(cpu.disp_buff);
+    //     println!("Display:");
+    //     display.render_to_raw_terminal();
+    //     println!("Display end");
+    //     for i in 0..32 {
+    //         for ii in 0..64 {
+    //             assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
+    //         }
+    //     }
+    // }
 
-    #[test]
-    fn test_ld_f_vx_0() {
-        let mut cpu = Cpu::new();
-        Cpu::load_data(&mut cpu, vec![0x61, 0x00, 0xF1, 0x29, 0xD0, 0x05]);
-        for _ in 0..3 {
-            cpu.emulate_cycle();
-        }
-        let mut expected = [[false; 64]; 32];
-        expected[0][0] = true;
-        expected[0][1] = true;
-        expected[0][2] = true;
-        expected[0][3] = true;
-        expected[1][0] = true;
-        expected[1][1] = false;
-        expected[1][2] = false;
-        expected[1][3] = true;
-        expected[2][0] = true;
-        expected[2][1] = false;
-        expected[2][2] = false;
-        expected[2][3] = true;
-        expected[3][0] = true;
-        expected[3][1] = false;
-        expected[3][2] = false;
-        expected[3][3] = true;
-        expected[4][0] = true;
-        expected[4][1] = true;
-        expected[4][2] = true;
-        expected[4][3] = true;
-        use display::Display;
-        let display = Display::new(cpu.disp_buff);
-        println!("Display:");
-        display.render_to_raw_terminal();
-        for i in 0..32 {
-            for ii in 0..64 {
-                assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
-            }
-        }
-    }
+    // #[test]
+    // fn test_ld_f_vx_0() {
+    //     let mut cpu = Cpu::new();
+    //     Cpu::load_data(&mut cpu, vec![0x61, 0x00, 0xF1, 0x29, 0xD0, 0x05]);
+    //     for _ in 0..3 {
+    //         cpu.emulate_cycle();
+    //     }
+    //     let mut expected = [[false; 64]; 32];
+    //     expected[0][0] = true;
+    //     expected[0][1] = true;
+    //     expected[0][2] = true;
+    //     expected[0][3] = true;
+    //     expected[1][0] = true;
+    //     expected[1][1] = false;
+    //     expected[1][2] = false;
+    //     expected[1][3] = true;
+    //     expected[2][0] = true;
+    //     expected[2][1] = false;
+    //     expected[2][2] = false;
+    //     expected[2][3] = true;
+    //     expected[3][0] = true;
+    //     expected[3][1] = false;
+    //     expected[3][2] = false;
+    //     expected[3][3] = true;
+    //     expected[4][0] = true;
+    //     expected[4][1] = true;
+    //     expected[4][2] = true;
+    //     expected[4][3] = true;
+    //     use display::Display;
+    //     let display = Display::new(cpu.disp_buff);
+    //     println!("Display:");
+    //     display.render_to_raw_terminal();
+    //     for i in 0..32 {
+    //         for ii in 0..64 {
+    //             assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
+    //         }
+    //     }
+    // }
 
 
-    #[test]
-    fn test_ld_f_vx_1() {
-        let mut cpu = Cpu::new();
-        Cpu::load_data(&mut cpu, vec![0x61, 0x01, 0xF1, 0x29, 0xD0, 0x05]);
-        for _ in 0..3 {
-            cpu.emulate_cycle();
-        }
-        let mut expected = [[false; 64]; 32];
-        expected[0][0] = false;
-        expected[0][1] = false;
-        expected[0][2] = true;
-        expected[0][3] = false;
-        expected[1][0] = false;
-        expected[1][1] = true;
-        expected[1][2] = true;
-        expected[1][3] = false;
-        expected[2][0] = false;
-        expected[2][1] = false;
-        expected[2][2] = true;
-        expected[2][3] = false;
-        expected[3][0] = false;
-        expected[3][1] = false;
-        expected[3][2] = true;
-        expected[3][3] = false;
-        expected[4][0] = false;
-        expected[4][1] = true;
-        expected[4][2] = true;
-        expected[4][3] = true;
-        use display::Display;
-        let display = Display::new(cpu.disp_buff);
-        println!("Display:");
-        display.render_to_raw_terminal();
-        for i in 0..32 {
-            for ii in 0..64 {
-                assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
-            }
-        }
-    }
+    // #[test]
+    // fn test_ld_f_vx_1() {
+    //     let mut cpu = Cpu::new();
+    //     Cpu::load_data(&mut cpu, vec![0x61, 0x01, 0xF1, 0x29, 0xD0, 0x05]);
+    //     for _ in 0..3 {
+    //         cpu.emulate_cycle();
+    //     }
+    //     let mut expected = [[false; 64]; 32];
+    //     expected[0][0] = false;
+    //     expected[0][1] = false;
+    //     expected[0][2] = true;
+    //     expected[0][3] = false;
+    //     expected[1][0] = false;
+    //     expected[1][1] = true;
+    //     expected[1][2] = true;
+    //     expected[1][3] = false;
+    //     expected[2][0] = false;
+    //     expected[2][1] = false;
+    //     expected[2][2] = true;
+    //     expected[2][3] = false;
+    //     expected[3][0] = false;
+    //     expected[3][1] = false;
+    //     expected[3][2] = true;
+    //     expected[3][3] = false;
+    //     expected[4][0] = false;
+    //     expected[4][1] = true;
+    //     expected[4][2] = true;
+    //     expected[4][3] = true;
+    //     use display::Display;
+    //     let display = Display::new(cpu.disp_buff);
+    //     println!("Display:");
+    //     display.render_to_raw_terminal();
+    //     for i in 0..32 {
+    //         for ii in 0..64 {
+    //             assert_eq!(cpu.disp_buff[i][ii], expected[i][ii]);
+    //         }
+    //     }
+    // }
 
     // I should test the whole font set? But I'm confident it works at this point.
 
@@ -1079,7 +1079,9 @@ mod tests {
         let mut cpu = Cpu::new();
         Cpu::load_data(&mut cpu, vec![0x61, 0x01, 0x61, 0x01]);
         cpu.delay_timer = 120;
-        thread::sleep_ms(18);
+        use std::{time};
+        let millis_18 = time::Duration::from_millis(18);
+        thread::sleep(millis_18);
         cpu.emulate_cycle();
         assert_eq!(cpu.delay_timer, 119);
     }
