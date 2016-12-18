@@ -101,9 +101,5 @@ fn main() {
             machine.on_update();
         }
     }
-
-    // loop {
-    //     cpu.emulate_cycle();
-    //     display.render();
-    // }
+    
 }

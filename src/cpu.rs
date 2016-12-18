@@ -140,6 +140,7 @@ impl Cpu {
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
             0x29 => self.op_ld_f_vx(),
+            0x33 => self.op_ld_b_vx(),
             _    => self.opcode_unimplemented()
         }
     }
@@ -464,6 +465,19 @@ impl Cpu {
     // Vx.
     fn op_ld_f_vx(&mut self) {
         self.i = (self.v[self.get_x() as usize] * 5) as u16;
+        self.inc_pc();
+    }
+
+    // Fx33 - Ld, B, Vx -- Store BCD representation of Vx in memory locations I, 
+    // I+1 and I+1.
+    // Take the decimal value of Vx, place the hundreds digit in memory at location I,
+    // the tens digit at I+1, and the ones digit at I+2.
+    fn op_ld_b_vx(&mut self) {
+        let vx = self.v[self.get_x() as usize];
+        let i = self.i as usize;
+        self.memory[i] = vx / 100;
+        self.memory[i + 1] = (vx / 10) % 10;
+        self.memory[i + 2] = (vx %100) %10;
         self.inc_pc();
     }
 
@@ -1118,5 +1132,21 @@ mod tests {
         Cpu::load_data(&mut cpu, vec![0xE0, 0xA1]);
         cpu.emulate_cycle();
         assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_ld_b_vx() {
+        let mut cpu = Cpu::new();
+        cpu.i = 0x500;
+        cpu.v[0] = 136;
+        Cpu::load_data(&mut cpu, vec![0xF0, 0x33]);
+        cpu.emulate_cycle();
+        println!("");
+        println!("0x500: {}", cpu.memory[0x500]);
+        println!("0x501: {}", cpu.memory[0x501]);
+        println!("0x502: {}", cpu.memory[0x502]);
+        assert_eq!(cpu.memory[0x500], 1);
+        assert_eq!(cpu.memory[0x501], 3);
+        assert_eq!(cpu.memory[0x502], 6);
     }
 }
