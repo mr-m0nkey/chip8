@@ -1,3 +1,5 @@
+#![feature(inclusive_range_syntax)]
+
 mod cpu;
 
 extern crate piston_window;
@@ -101,5 +103,5 @@ fn main() {
             machine.on_update();
         }
     }
-    
+
 }
