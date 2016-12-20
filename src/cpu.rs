@@ -144,6 +144,7 @@ impl Cpu {
             0x18 => self.op_ld_st_vx(),
             0x29 => self.op_ld_f_vx(),
             0x33 => self.op_ld_b_vx(),
+            0x55 => self.op_ld_i_vx(),
             0x65 => self.op_ld_vx_i(),
             _    => self.opcode_unimplemented()
         }
@@ -506,6 +507,19 @@ impl Cpu {
         self.inc_pc();
     }
 
+    // Fx55 - LD [I], Vx -- Store registers V0 through Vx in memory starting at location I.
+    // The interpreter copies the values of registers V0 through Vx into memory, starting at
+    // the address in I.
+    fn op_ld_i_vx(&mut self) {
+        let x = self.get_x() as u16;
+        let i = self.i;
+        for n in 0...x {
+            self.memory[(i + n) as usize] = self.v[n as usize];
+        }
+        self.i = i + x + 1;
+        self.inc_pc();
+    }
+    
     // Fx65 - LD Vx, [I] -- Read register V0 through Vx from memory starting @ I.
     // Reads values from memory starting at location I into register V0 through Vx.
     // Then set I to I + X + 1.
@@ -1202,6 +1216,20 @@ mod tests {
         assert_eq!(cpu.v[1], 1);
         assert_eq!(cpu.v[2], 2);
         assert_eq!(cpu.v[3], 3);
+    }
+
+    #[test]
+    fn test_ld_i_vx() {
+        let mut cpu = Cpu::new();
+        cpu.i = 0x500;
+        cpu.v[0] = 0;
+        cpu.v[1] = 1;
+        cpu.v[2] = 2;
+        Cpu::load_data(&mut cpu, vec![0xF2, 0x55]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.memory[0x500], 0);
+        assert_eq!(cpu.memory[0x501], 1);
+        assert_eq!(cpu.memory[0x502], 2);
     }
 
     #[test]
