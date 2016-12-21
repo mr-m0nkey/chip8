@@ -140,6 +140,7 @@ impl Cpu {
     fn op_fxxx(&mut self) {
         match self.opcode & 0x00FF {
             0x07 => self.op_ld_vx_dt(),
+            0x0A => self.op_ld_vx_k(),
             0x15 => self.op_ld_dt_vx(),
             0x18 => self.op_ld_st_vx(),
             0x29 => self.op_ld_f_vx(),
@@ -470,6 +471,21 @@ impl Cpu {
     fn op_ld_vx_dt(&mut self) {
         self.v[self.get_x() as usize] = self.delay_timer;
         self.inc_pc();
+    }
+
+    // Fx0A - LD Vx, K -- Wait for a key press, store the value of the key in Vx.
+    // All execution stops until a key is pressed, then the value of that key is stored in Vx.
+    fn op_ld_vx_k(&mut self) {
+        let mut continue_exec = false;
+        for (key, pressed) in self.key_buff.iter().enumerate() {
+            if *pressed {
+                self.v[self.get_x() as usize] = key as u8;
+                continue_exec = true;
+            }
+        }
+        if continue_exec {
+            self.inc_pc();
+        }
     }
 
     // Fx15 - LD DT, Vx -- Set delay timer = Vx
@@ -1239,5 +1255,16 @@ mod tests {
         Cpu::load_data(&mut cpu, vec![0xF3, 0x15]);
         cpu.emulate_cycle();
         assert_eq!(cpu.delay_timer, 0x20);
+    }
+
+    #[test]
+    fn test_ld_vx_k() {
+        let cpu = &mut Cpu::new();
+        Cpu::load_data(cpu, vec![0xFF, 0x0A]);
+        cpu.emulate_cycle();
+        assert_eq!(cpu.pc, 0x200);
+        cpu.key_buff[3] = true;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.v[0xF], 3);
     }
 }
