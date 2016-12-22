@@ -143,6 +143,7 @@ impl Cpu {
             0x0A => self.op_ld_vx_k(),
             0x15 => self.op_ld_dt_vx(),
             0x18 => self.op_ld_st_vx(),
+            0x1E => self.op_add_i_vx(),
             0x29 => self.op_ld_f_vx(),
             0x33 => self.op_ld_b_vx(),
             0x55 => self.op_ld_i_vx(),
@@ -499,6 +500,13 @@ impl Cpu {
     // DT is set equal to the value of Vx.
     fn op_ld_st_vx(&mut self) {
         self.sound_timer = self.v[self.get_x() as usize];
+        self.inc_pc();
+    }
+
+    // Fx1E - ADD I, Vx -- Set I = I + Vx
+    // Values of I and Vx are added, results stored in I.
+    fn op_add_i_vx(&mut self) {
+        self.i = self.i + self.v[self.get_x() as usize] as u16;
         self.inc_pc();
     }
 
@@ -1266,5 +1274,15 @@ mod tests {
         cpu.key_buff[3] = true;
         cpu.emulate_cycle();
         assert_eq!(cpu.v[0xF], 3);
+    }
+
+    #[test]
+    fn test_add_i_vx() {
+        let cpu = &mut Cpu::new();
+        Cpu::load_data(cpu, vec![0xFE, 0x1E]);
+        cpu.i = 1;
+        cpu.v[0xE] = 2;
+        cpu.emulate_cycle();
+        assert_eq!(cpu.i, 3);
     }
 }
