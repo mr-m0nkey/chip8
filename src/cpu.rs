@@ -537,7 +537,7 @@ impl Cpu {
     fn op_ld_i_vx(&mut self) {
         let x = self.get_x() as u16;
         let i = self.i;
-        for n in 0...x {
+        for n in 0..=x {
             self.memory[(i + n) as usize] = self.v[n as usize];
         }
         self.i = i + x + 1;
@@ -550,7 +550,7 @@ impl Cpu {
     fn op_ld_vx_i(&mut self) {
         let x = self.get_x() as u16;
         let i = self.i;
-        for n in 0...x {
+        for n in 0..=x {
             self.v[n as usize] = self.memory[(i + n) as usize];
         }
         self.i = i + x + 1;

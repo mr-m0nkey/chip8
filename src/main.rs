@@ -1,11 +1,8 @@
-#![feature(inclusive_range_syntax)]
-
 mod cpu;
 
 extern crate piston_window;
 extern crate piston;
 
-use piston::input::generic_event::GenericEvent;
 use piston_window::*;
 use std::env;
 use std::fs::File;
@@ -58,12 +55,12 @@ impl Machine {
         self.cpu.emulate_cycle();
     }
 
-    fn on_draw<E: GenericEvent>(&mut self, w: &mut PistonWindow, e: E) {
+    fn on_draw<E: GenericEvent>(&mut self, w: &mut PistonWindow, e: &E) {
         let black: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
         let white: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
         let square = rectangle::square(0.0, 0.0, 10.0);
 
-        w.draw_2d(&e, |c, g| {
+        w.draw_2d(e, |c, g| {
             clear(black, g);
             for (i, row) in self.cpu.disp_buff.iter().enumerate() {
                 for (ii, &pixel) in row.iter().enumerate() {
@@ -82,81 +79,51 @@ impl Machine {
         });
     }
 
-    fn on_input(&mut self, inp: Input) {
-        match inp {
-            Input::Press(but) => {
-                match but {
-                    Button::Keyboard(Key::D1) => { self.cpu.key_buff[1] = true }
-                    Button::Keyboard(Key::D2) => { self.cpu.key_buff[2] = true }
-                    Button::Keyboard(Key::D3) => { self.cpu.key_buff[3] = true }
-                    Button::Keyboard(Key::D4) => { self.cpu.key_buff[0xC] = true }
-                    Button::Keyboard(Key::Q) => { self.cpu.key_buff[4] = true }
-                    Button::Keyboard(Key::W) => { self.cpu.key_buff[5] = true }
-                    Button::Keyboard(Key::E) => { self.cpu.key_buff[6] = true }
-                    Button::Keyboard(Key::R) => { self.cpu.key_buff[0xD] = true }
-                    Button::Keyboard(Key::A) => { self.cpu.key_buff[7] = true }
-                    Button::Keyboard(Key::S) => { self.cpu.key_buff[8] = true }
-                    Button::Keyboard(Key::D) => { self.cpu.key_buff[9] = true }
-                    Button::Keyboard(Key::F) => { self.cpu.key_buff[0xE] = true }
-                    Button::Keyboard(Key::Z) => { self.cpu.key_buff[0xA] = true }
-                    Button::Keyboard(Key::X) => { self.cpu.key_buff[0] = true }
-                    Button::Keyboard(Key::C) => { self.cpu.key_buff[0xB] = true }
-                    Button::Keyboard(Key::V) => { self.cpu.key_buff[0xF] = true }
-                    _ => { }
-                }
-            }
-            Input::Release(but) => {
-                match but {
-                    Button::Keyboard(Key::D1) => { self.cpu.key_buff[1] = false }
-                    Button::Keyboard(Key::D2) => { self.cpu.key_buff[2] = false }
-                    Button::Keyboard(Key::D3) => { self.cpu.key_buff[3] = false }
-                    Button::Keyboard(Key::D4) => { self.cpu.key_buff[0xC] = false }
-                    Button::Keyboard(Key::Q) => { self.cpu.key_buff[4] = false }
-                    Button::Keyboard(Key::W) => { self.cpu.key_buff[5] = false }
-                    Button::Keyboard(Key::E) => { self.cpu.key_buff[6] = false }
-                    Button::Keyboard(Key::R) => { self.cpu.key_buff[0xD] = false }
-                    Button::Keyboard(Key::A) => { self.cpu.key_buff[7] = false }
-                    Button::Keyboard(Key::S) => { self.cpu.key_buff[8] = false }
-                    Button::Keyboard(Key::D) => { self.cpu.key_buff[9] = false }
-                    Button::Keyboard(Key::F) => { self.cpu.key_buff[0xE] = false }
-                    Button::Keyboard(Key::Z) => { self.cpu.key_buff[0xA] = false }
-                    Button::Keyboard(Key::X) => { self.cpu.key_buff[0] = false }
-                    Button::Keyboard(Key::C) => { self.cpu.key_buff[0xB] = false }
-                    Button::Keyboard(Key::V) => { self.cpu.key_buff[0xF] = false }
-                    _ => { }
-                }
-            }
+    fn on_input(&mut self, ba: &ButtonArgs) {
+        let state = ba.state == ButtonState::Press;
+        match ba.button {
+            Button::Keyboard(Key::D1) => { self.cpu.key_buff[1] = state }
+            Button::Keyboard(Key::D2) => { self.cpu.key_buff[2] = state }
+            Button::Keyboard(Key::D3) => { self.cpu.key_buff[3] = state }
+            Button::Keyboard(Key::D4) => { self.cpu.key_buff[0xC] = state }
+            Button::Keyboard(Key::Q) => { self.cpu.key_buff[4] = state }
+            Button::Keyboard(Key::W) => { self.cpu.key_buff[5] = state }
+            Button::Keyboard(Key::E) => { self.cpu.key_buff[6] = state }
+            Button::Keyboard(Key::R) => { self.cpu.key_buff[0xD] = state }
+            Button::Keyboard(Key::A) => { self.cpu.key_buff[7] = state }
+            Button::Keyboard(Key::S) => { self.cpu.key_buff[8] = state }
+            Button::Keyboard(Key::D) => { self.cpu.key_buff[9] = state }
+            Button::Keyboard(Key::F) => { self.cpu.key_buff[0xE] = state }
+            Button::Keyboard(Key::Z) => { self.cpu.key_buff[0xA] = state }
+            Button::Keyboard(Key::X) => { self.cpu.key_buff[0] = state }
+            Button::Keyboard(Key::C) => { self.cpu.key_buff[0xB] = state }
+            Button::Keyboard(Key::V) => { self.cpu.key_buff[0xF] = state }
             _ => { }
         }
     }
 }
+
 
 fn main() {
 
     let mut machine = Machine::new();
     machine.load_rom();
 
-    let mut window: PistonWindow = WindowSettings::new(
-        "chip8 emulator", [640, 320]
-    )
-    .exit_on_esc(true)
-    .build()
-    .unwrap();
-
-    let events = &mut window.events();
-    while let Some(e) = events.next(&mut window) {
-        match e {
-            Event::Update(_) => {
-                machine.on_update();
-            }
-            Event::Render(_) => {
-                machine.on_draw(&mut window, e);
-            }
-            Event::Input(inp) => {
-                machine.on_input(inp);
-            }
-            _ => { }
+    let mut window: PistonWindow =
+        WindowSettings::new("chip8 emulator", (640, 320))
+        .exit_on_esc(true)
+        .build()
+        .unwrap();
+    while let Some(e) = window.next() {
+        if let Some(_r) = e.render_args() {
+            machine.on_draw(&mut window, &e);
+        }
+        if let Some(_u) = e.update_args() {
+            machine.on_update();
+        }
+        if let Some(b) = e.button_args() {
+            machine.on_input(&b);
         }
     }
-
 }
+
